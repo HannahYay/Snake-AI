@@ -6,7 +6,8 @@ import numpy as np
 
 plt.ion()
 
-def plot(scores, mean_scores):
+def plot(scores, mean_scores, epsilonHistory, QVals):
+    plt.figure(1)
     display.clear_output(wait=True)
     display.display(plt.gcf())
     plt.clf()
@@ -18,6 +19,18 @@ def plot(scores, mean_scores):
     plt.ylim(ymin=0)
     plt.text(len(scores)-1, scores[-1], str(scores[-1]))
     plt.text(len(mean_scores)-1, mean_scores[-1], str(mean_scores[-1]))
+
+    plt.figure(2)
+    plt.title("Epsilon decay graph")
+    plt.ylabel('Epsilon')
+    plt.xlabel('Number of Games')    
+    plt.plot(epsilonHistory)
+
+    plt.figure(3)
+    plt.title("Q values graph")
+    plt.ylabel('Qvalue')
+    plt.xlabel('Number of Games')   
+    plt.plot(QVals)
 
     #plt.plot(regression_line)
 
