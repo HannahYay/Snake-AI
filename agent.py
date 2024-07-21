@@ -20,8 +20,11 @@ class Agent:
         self.epsilon = 0 # randomness
         self.gamma = 0.95 # discount rate was 0.95
         self.memory = deque(maxlen=MAX_MEMORY) # popleft()
-        self.model = DQN(20*20, 256, 3) #middle nodes were 256
-        self.trainer = SnakeDQN(self.model, lr=LR, gamma=self.gamma)
+        self.model = DQN(100, 256, 3) #middle nodes were 256
+        self.target = DQN(100, 256, 3)
+        self.target.load_state_dict(self.model.state_dict())
+        self.trainer = SnakeDQN(self.model, lr=LR, gamma=self.gamma, target=self.target)
+        self.networkSyncRate = 10 # number of steps the agent takes before syncing the policy and target network
 
 
         '''
@@ -102,7 +105,7 @@ class Agent:
         #self.trainer.train_step(states, actions, rewards, next_states, dones)
         
         for state, action, reward, next_state, done in mini_sample:
-            self.trainer.train_step(state, action, reward, next_state, done)
+            self.trainer.train_step(state, action, reward, next_state, done) #SnakeDQN is called for each s,a,r,s', done as many times as sample size
 
    # def train_short_memory(self, state, action, reward, next_state, done): #commented this out for testing
        # self.trainer.train_step(state, action, reward, next_state, done)
@@ -130,6 +133,7 @@ def train():
     record = 0
     agent = Agent()
     game = SnakeGameAI()
+    stepCount = 0
     while True:
         # get old state
         state_old = game.convertToState() # has been changed
@@ -139,6 +143,7 @@ def train():
 
         # perform move and get new state
         reward, done, score = game.play_step(final_move)
+        
         if done: #necessary to keep 
             # train long memory, plot result
             game.reset()
@@ -168,6 +173,11 @@ def train():
        # agent.train_short_memory(state_old, final_move, reward, state_new, done) #im hoping if I comment this out things will work
         # remember
             agent.remember(state_old, final_move, reward, state_new, done)
+            stepCount += 1
+
+            if(stepCount>agent.networkSyncRate):
+                agent.target.load_state_dict(agent.model.state_dict())
+                stepCount = 0
 
         
 
