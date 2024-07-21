@@ -69,7 +69,7 @@ class SnakeDQN: # needs changing... episodes as a param?
         policyQList.append(predPolicy)
         print(policyQList)
 
-        AverageQ = torch.mean(self.policyQList1)
+        AverageQ = torch.mean(predPolicy)
         
         predTarget = self.target(next_state) # target net prediction of s' (next state)
         predTarget[action] = targetQ
