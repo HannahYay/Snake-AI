@@ -32,6 +32,8 @@ class SnakeDQN: # needs changing... episodes as a param?
         self.gamma = gamma
         self.model = model
         self.target = target
+        self.policyQList1 = []
+        self.targetQList1 = []
 
     # Neural Network
         self.optimizer = optim.Adam(model.parameters(), lr=self.lr)  
@@ -65,11 +67,14 @@ class SnakeDQN: # needs changing... episodes as a param?
             # 1: predicted Q values with current state
         predPolicy = self.model(state) # policy net prediction of state
         policyQList.append(predPolicy)
+        print(policyQList)
 
+        AverageQ = torch.mean(self.policyQList1)
+        
         predTarget = self.target(next_state) # target net prediction of s' (next state)
         predTarget[action] = targetQ
         targetQList.append(predTarget)
-
+        
 
         #target = pred.clone()
        # for idx in range(len(done)):
@@ -83,6 +88,8 @@ class SnakeDQN: # needs changing... episodes as a param?
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
+        
+        return AverageQ
      
 
 
