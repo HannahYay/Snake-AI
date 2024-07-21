@@ -27,14 +27,11 @@ class DQN(nn.Module):
         torch.save(self.state_dict(), file_name)
 
 class SnakeDQN: # needs changing... episodes as a param?
-    def __init__(self, model, lr, gamma):
+    def __init__(self, model, lr, gamma, target):
         self.lr = lr   # 0.001         # learning rate (alpha)
         self.gamma = gamma
         self.model = model
-        mini_batch_size = 32   # size of the training data set sampled from the replay memory
-        discount_factor_g = 0.9        # discount rate (gamma)
-        network_sync_rate = 10          # number of steps the agent takes before syncing the policy and target network
-        replay_memory_size = 1000       # size of replay memory
+        self.target = target
 
     # Neural Network
         self.optimizer = optim.Adam(model.parameters(), lr=self.lr)  
@@ -46,29 +43,45 @@ class SnakeDQN: # needs changing... episodes as a param?
         action = torch.tensor(action, dtype=torch.long)
         reward = torch.tensor(reward, dtype=torch.float)
         
-        if len(state.shape) == 1:
+        policyQList = []
+        targetQList = []
+
+        #if len(state.shape) == 1:
                 # (1, x)
-            state = torch.unsqueeze(state, 0)
-            next_state = torch.unsqueeze(next_state, 0)
-            action = torch.unsqueeze(action, 0)
-            reward = torch.unsqueeze(reward, 0)
-            done = (done, )
+            #state = torch.unsqueeze(state, 0)
+            #next_state = torch.unsqueeze(next_state, 0)
+            #action = torch.unsqueeze(action, 0)
+            #reward = torch.unsqueeze(reward, 0)
+            #done = (done, )
+
+        if done:
+            targetQ = torch.FloatTensor([reward])
+        else: 
+            with torch.no_grad():
+                targetQ = torch.FloatTensor(
+                        reward + self.gamma * self.target(next_state).max()
+                    )
 
             # 1: predicted Q values with current state
-        pred = self.model(state)
+        predPolicy = self.model(state) # policy net prediction of state
+        policyQList.append(predPolicy)
 
-        target = pred.clone()
-        for idx in range(len(done)):
-            Q_new = reward[idx]
-            if not done[idx]:
-                Q_new = reward[idx] + self.gamma * torch.max(self.model(next_state[idx]))
+        predTarget = self.target(next_state) # target net prediction of s' (next state)
+        predTarget[action] = targetQ
+        targetQList.append(predTarget)
 
-            target[idx][torch.argmax(action[idx]).item()] = Q_new
 
+        #target = pred.clone()
+       # for idx in range(len(done)):
+           # Q_new = reward[idx]
+            #if not done[idx]:
+                #Q_new = reward[idx] + self.gamma * torch.max(self.model(next_state[idx]))
+
+            #target[idx][torch.argmax(action[idx]).item()] = Q_new
+            
+        loss = self.criterion(torch.stack(policyQList), torch.stack(targetQList))
         self.optimizer.zero_grad()
-        loss = self.criterion(target, pred)
         loss.backward()
-
         self.optimizer.step()
      
 
