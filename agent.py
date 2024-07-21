@@ -10,25 +10,32 @@ import math
 
 
 MAX_MEMORY = 100_000
-BATCH_SIZE = 500
+BATCH_SIZE = 100
 LR = 0.001
 
 class Agent:
 
     def __init__(self):
         self.n_games = 0
-        self.epsilon = 0 # randomness
+        self.epsilon = 1.0 # randomness
+        self.epsilonMin = 0.01
+        self.decay = 0.995
         self.gamma = 0.95 # discount rate was 0.95
         self.memory = deque(maxlen=MAX_MEMORY) # popleft()
-        self.model = DQN(100, 256, 3) #middle nodes were 256
-        self.target = DQN(100, 256, 3)
+        self.model = DQN(11, 256, 3) #middle nodes were 256
+        self.target = DQN(11, 256, 3)
         self.target.load_state_dict(self.model.state_dict())
         self.trainer = SnakeDQN(self.model, lr=LR, gamma=self.gamma, target=self.target)
         self.networkSyncRate = 10 # number of steps the agent takes before syncing the policy and target network
+        self.epsilon_history = []
+        self.QValues = []
+
+        
+        
 
 
-        '''
-     def get_state(self, game):
+        
+    def get_state(self, game):
         head = game.snake[0]
 
         point_l = Point(head.x - 20, head.y)
@@ -85,7 +92,7 @@ class Agent:
        
 
         return np.array(state, dtype=int)
-         '''
+         
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done)) # popleft if MAX_MEMORY is reached    
     
@@ -112,9 +119,10 @@ class Agent:
 
     def get_action(self, state):
         # random moves: tradeoff exploration / exploitation
-        self.epsilon = 80 - self.n_games # was 80
+       #self.epsilon = 80 - self.n_games # was 80
         final_move = [0,0,0]
-        if random.randint(0, 200) < self.epsilon: # reducing probalility of being random #was 200
+        
+        if random.random() < self.epsilon: 
             move = random.randint(0, 2)
             final_move[move] = 1
         else:
@@ -122,13 +130,29 @@ class Agent:
             prediction = self.model(state0)
             move = torch.argmax(prediction).item()
             final_move[move] = 1
+        
 
         return final_move
+    
+    def update_epsilon(self, score):
+        if score > 0:
+            self.epsilon = max(self.epsilonMin, self.epsilon * self.decay)
+            self.epsilon_history.append(self.epsilon)
+
+   
+
+
+
+        
+
+        
 
 
 def train():
     plot_scores = []
     plot_mean_scores = []
+    
+
     total_score = 0
     record = 0
     agent = Agent()
@@ -136,19 +160,23 @@ def train():
     stepCount = 0
     while True:
         # get old state
-        state_old = game.convertToState() # has been changed
-
+        #state_old = game.convertToState() # has been changed
+        state_old = agent.get_state(game)
         # get move
         final_move = agent.get_action(state_old)
 
         # perform move and get new state
         reward, done, score = game.play_step(final_move)
+        agent.update_epsilon(score)
         
+
         if done: #necessary to keep 
             # train long memory, plot result
             game.reset()
             agent.n_games += 1
-            agent.train_long_memory()
+            AverageQ = agent.train_long_memory()
+            agent.QValues.append(AverageQ)
+
 
             if score > record:
                 record = score
@@ -165,10 +193,12 @@ def train():
             #regression_line = slope * x + intercept
            # cleaplot_regression_line.append(regression_line)
             plot_mean_scores.append(mean_score)
-            plot(plot_scores, plot_mean_scores)
-        
+            plot(plot_scores, plot_mean_scores, agent.epsilon_history, agent.QValues)
+            
+    
         else:
-            state_new = game.convertToState()
+            #state_new = game.convertToState()
+            state_new = agent.get_state(game)
         # train short memory
        # agent.train_short_memory(state_old, final_move, reward, state_new, done) #im hoping if I comment this out things will work
         # remember
