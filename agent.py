@@ -140,7 +140,6 @@ class Agent:
         return final_move
     
     def update_epsilon(self, score):
-        if score > 0:
             self.epsilon = max(self.epsilonMin, self.epsilon * self.decay)
             self.epsilon_history.append(self.epsilon)
 
@@ -171,7 +170,6 @@ def train():
 
         # perform move and get new state
         reward, done, score = game.play_step(final_move)
-        agent.update_epsilon(score)
         #state_new = game.convertToState()
         state_new = agent.get_state(game)
         agent.remember(state_old, final_move, reward, state_new, done)
@@ -182,6 +180,7 @@ def train():
             game.reset()
             agent.n_games += 1
             agent.train_long_memory()
+            agent.update_epsilon(score)
             
 
 
