@@ -5,7 +5,7 @@ from IPython import display
 
 plt.ion()
 
-def plot(scores, mean_scores, epsilonHistory, QVals):
+def plot(scores, mean_scores, epsilonHistory, QVals, lossVals):
     plt.figure(1)
     display.clear_output(wait=True)
     display.display(plt.gcf())
@@ -30,6 +30,12 @@ def plot(scores, mean_scores, epsilonHistory, QVals):
     plt.ylabel('Qvalue')
     plt.xlabel('Number of Batches')   
     plt.plot(QVals)
+
+    plt.figure(4)
+    plt.title("Loss values graph")
+    plt.ylabel('loss')
+    plt.xlabel('Number of Batches')   
+    plt.plot(lossVals)
 
     #plt.plot(regression_line)
 
