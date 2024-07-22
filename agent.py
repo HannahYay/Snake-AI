@@ -19,7 +19,7 @@ class Agent:
         self.n_games = 0
         self.epsilon = 1.0 # randomness
         self.epsilonMin = 0.1
-        self.decay = 0.995
+        self.decay = 0.999
         self.gamma = 0.95 # discount rate was 0.95
         self.memory = deque(maxlen=MAX_MEMORY) # popleft()
         self.model = DQN(11, 256, 3) #middle nodes were 256
@@ -108,12 +108,13 @@ class Agent:
         else:
             mini_sample = self.memory
 
-        #states, actions, rewards, next_states, dones = zip(*mini_sample)
-        #AverageQ = self.trainer.train_step(states, actions, rewards, next_states, dones)
+        states, actions, rewards, next_states, dones = zip(*mini_sample)
+        sumQ = self.trainer.train_step(states, actions, rewards, next_states, dones)
+        self.qValues.append(sumQ/BATCH_SIZE)
         
-        for state, action, reward, next_state, done in mini_sample:
-            AverageQ = self.trainer.train_step(state, action, reward, next_state, done) #SnakeDQN is called for each s,a,r,s', done as many times as sample size
-            self.qValues.append(AverageQ)
+        #for state, action, reward, next_state, done in mini_sample:
+            #AverageQ = self.trainer.train_step(state, action, reward, next_state, done) #SnakeDQN is called for each s,a,r,s', done as many times as sample size
+            #self.qValues.append(AverageQ)
             
 
    # def train_short_memory(self, state, action, reward, next_state, done): #commented this out for testing
@@ -137,7 +138,11 @@ class Agent:
         return final_move
     
     def update_epsilon(self, score):
-        if score > 0:
+        if self.n_games > 200:
+            if score > 1:
+                self.epsilon = max(self.epsilonMin, self.epsilon * self.decay)
+                self.epsilon_history.append(self.epsilon)
+        else:
             self.epsilon = max(self.epsilonMin, self.epsilon * self.decay)
             self.epsilon_history.append(self.epsilon)
 
@@ -204,7 +209,6 @@ def train():
         # train short memory
        # agent.train_short_memory(state_old, final_move, reward, state_new, done) #im hoping if I comment this out things will work
         # remember
-            agent.remember(state_old, final_move, reward, state_new, done)
             stepCount += 1
 
             if(stepCount>agent.networkSyncRate):
