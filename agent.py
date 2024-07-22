@@ -138,14 +138,14 @@ class Agent:
         return final_move
     
     def update_epsilon(self, score):
-        if self.n_games > 200:
-            if score > 1:
+        if self.n_games < 200:
+            if score > 0:
                 self.epsilon = max(self.epsilonMin, self.epsilon * self.decay)
                 self.epsilon_history.append(self.epsilon)
         else:
-            self.epsilon = max(self.epsilonMin, self.epsilon * self.decay)
-            self.epsilon_history.append(self.epsilon)
-
+            if score > 1:
+             self.epsilon = max(self.epsilonMin, self.epsilon * self.decay)
+             self.epsilon_history.append(self.epsilon)
    
 
 
