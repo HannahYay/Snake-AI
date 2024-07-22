@@ -5,6 +5,7 @@ import torch.nn.functional as F
 import os
 import random
 from collections import deque
+import numpy as np
 
 class DQN(nn.Module):
     def __init__(self, in_states, h1_nodes, out_actions):
@@ -32,21 +33,19 @@ class SnakeDQN: # needs changing... episodes as a param?
         self.gamma = gamma
         self.model = model
         self.target = target
-        self.policyQList1 = []
-        self.targetQList1 = []
 
     # Neural Network
         self.optimizer = optim.Adam(model.parameters(), lr=self.lr)  
         self.criterion = nn.MSELoss() # NN Loss function. MSE=Mean Squared Error can be swapped to something else?
 
-    def train_step(self, state, action, reward, next_state, done):
-        state = torch.tensor(state, dtype=torch.float)
-        next_state = torch.tensor(next_state, dtype=torch.float)
-        action = torch.tensor(action, dtype=torch.long)
-        reward = torch.tensor(reward, dtype=torch.float)
+    def train_step(self, states, actions, rewards, next_states, dones):
+        states = torch.tensor(states, dtype=torch.float32)
+        next_states = torch.tensor(next_states, dtype=torch.float32)
+        actions = torch.tensor(actions, dtype=torch.long)
+        rewards = torch.tensor(rewards, dtype=torch.float32)
+        dones = torch.tensor(dones, dtype=torch.float32)
 
-        policyQList = []
-        targetQList = []
+        policyQSum = 0
 
         # if len(state.shape) == 1:
         # (1, x)
@@ -56,37 +55,29 @@ class SnakeDQN: # needs changing... episodes as a param?
         # reward = torch.unsqueeze(reward, 0)
         # done = (done, )
 
-        if done:
-            targetQ = torch.FloatTensor([reward])
-        else:
-            with torch.no_grad():
-                targetQ = torch.FloatTensor(reward + self.gamma * self.target(next_state).max())
+        predTarget = self.target(next_states)  # target net prediction of s' (next state)
+        predPolicy = self.model(states)  # policy net prediction of state
+        policyQSum += torch.mean(predPolicy).item()
+
+
+        
+        targetQs = torch.tensor(rewards + self.gamma * predTarget.max()*(1-dones))
 
             # 1: predicted Q values with current state
-        predPolicy = self.model(state)  # policy net prediction of state
-        policyQList.append(predPolicy)
-        # print(policyQList)
+        
+        #predTarget[torch.argmax(actions)] = targetQs
+        #targetQList.append(predTarget)
 
-        AverageQ = torch.mean(predPolicy)
-
-        predTarget = self.target(next_state)  # target net prediction of s' (next state)
-        predTarget[action] = targetQ
-        targetQList.append(predTarget)
-
-        # target = pred.clone()
-        # for idx in range(len(done)):
-        # Q_new = reward[idx]
-        # if not done[idx]:
-        # Q_new = reward[idx] + self.gamma * torch.max(self.model(next_state[idx]))
+    
 
         # target[idx][torch.argmax(action[idx]).item()] = Q_new
 
-        loss = self.criterion(predPolicy[torch.argmax(action)], targetQ)
+        loss = self.criterion(predPolicy[3,torch.argmax(actions)], targetQs)
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
 
-        return AverageQ.item()
+        return (policyQSum)
 
         
      
