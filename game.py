@@ -4,6 +4,7 @@ from enum import Enum
 from collections import namedtuple
 import numpy as np
 import torch
+import matplotlib.pyplot as plt
 
 pygame.init()
 font = pygame.font.Font('arial.ttf', 25)
@@ -79,7 +80,7 @@ class SnakeGameAI:
         # 3. check if game over
         reward = 0 #was 0
         game_over = False
-        if self.is_collision() or self.frame_iteration > 60*len(self.snake): # was 100*len
+        if self.is_collision() or self.frame_iteration > 100*len(self.snake): # was 100*len
             game_over = True
             reward = -100
             return reward, game_over, self.score
@@ -92,13 +93,13 @@ class SnakeGameAI:
         else:
             self.snake.pop()
             reward = -1
+           
         
         # 5. update ui and clock
         self._update_ui()
         self.clock.tick(SPEED)
 
-        torch.set_printoptions(linewidth=90)
-        print(self.convertToState())
+        
 
         # 6. return game over and score
         return reward, game_over, self.score
@@ -170,16 +171,18 @@ class SnakeGameAI:
 
    
     def convertToState(self):
-        if(self.is_collision()):
-            return 1
-        else:
-        
-            board = torch.zeros((int(self.w // BLOCK_SIZE), int(self.h // BLOCK_SIZE)))
+        #if(self.is_collision()): 
+        #    return 1
+        #else:
+            board = torch.zeros((int(self.h // BLOCK_SIZE), int(self.w // BLOCK_SIZE)))
         
             board[int(self.food.y // BLOCK_SIZE)][int(self.food.x // BLOCK_SIZE)] = 0.5
-            board[int(self.head.y // BLOCK_SIZE)][int(self.head.x // BLOCK_SIZE)] = 1.0
             for part in self.snake[1:]:
                 board[int(part.y // BLOCK_SIZE)][int(part.x // BLOCK_SIZE)] = 0.8
+            board[int(self.head.y // BLOCK_SIZE)][int(self.head.x // BLOCK_SIZE)] = 1.0
+            torch.set_printoptions(linewidth=160)
+            print(board)
+           # plt.imshow(board)
             return board.flatten()
         
         
