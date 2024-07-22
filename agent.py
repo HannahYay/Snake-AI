@@ -29,6 +29,7 @@ class Agent:
         self.networkSyncRate = 10 # number of steps the agent takes before syncing the policy and target network
         self.epsilon_history = []
         self.qValues = []
+        self.lossValues = []
 
         
         
@@ -109,8 +110,9 @@ class Agent:
             mini_sample = self.memory
 
         states, actions, rewards, next_states, dones = zip(*mini_sample)
-        sumQ = self.trainer.train_step(states, actions, rewards, next_states, dones)
+        sumQ, loss = self.trainer.train_step(states, actions, rewards, next_states, dones)
         self.qValues.append(sumQ/BATCH_SIZE)
+        self.lossValues.append(loss)
         
         #for state, action, reward, next_state, done in mini_sample:
             #AverageQ = self.trainer.train_step(state, action, reward, next_state, done) #SnakeDQN is called for each s,a,r,s', done as many times as sample size
@@ -138,9 +140,10 @@ class Agent:
         return final_move
     
     def update_epsilon(self, score):
-        if score > 1:
+        if score > 0:
             self.epsilon = max(self.epsilonMin, self.epsilon * self.decay)
             self.epsilon_history.append(self.epsilon)
+
    
 
 
@@ -197,7 +200,7 @@ def train():
             #regression_line = slope * x + intercept
            # cleaplot_regression_line.append(regression_line)
             plot_mean_scores.append(mean_score)
-            plot(plot_scores, plot_mean_scores, agent.epsilon_history, agent.qValues)
+            plot(plot_scores, plot_mean_scores, agent.epsilon_history, agent.qValues, agent.lossValues)
             
     
         else:
