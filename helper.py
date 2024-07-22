@@ -2,7 +2,6 @@
 
 import matplotlib.pyplot as plt
 from IPython import display
-import numpy as np
 
 plt.ion()
 
@@ -29,7 +28,7 @@ def plot(scores, mean_scores, epsilonHistory, QVals):
     plt.figure(3)
     plt.title("Q values graph")
     plt.ylabel('Qvalue')
-    plt.xlabel('Number of Games')   
+    plt.xlabel('Number of Batches')   
     plt.plot(QVals)
 
     #plt.plot(regression_line)
