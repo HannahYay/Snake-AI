@@ -54,25 +54,17 @@ class SnakeDQN: # needs changing... episodes as a param?
         # action = torch.unsqueeze(action, 0)
         # reward = torch.unsqueeze(reward, 0)
         # done = (done, )
+
+        
         predPolicy = self.model(states)  # policy net prediction of state
         policyQSum += torch.mean(predPolicy).item()
-        predTarget = self.target(next_states)  # target net prediction of s' (next state)
 
-
+        predTarget = self.target(next_states)  
+        with torch.no_grad(): targetQs = torch.tensor(rewards + self.gamma * predTarget.max()*(1-dones))
+        #targetQs-targetQs.detach()
         
-        targetQs = torch.tensor(rewards + self.gamma * predTarget.max()*(1-dones))
-        
 
-
-            # 1: predicted Q values with current state
-        
-        predTarget[range(len(actions)),torch.argmax(actions)] = targetQs
-        #targetQList.append(predTarget)
-
-    
-
-
-        loss = self.criterion(predPolicy[range(len(actions)),torch.argmax(actions)], targetQs)
+        loss = self.criterion(predPolicy[range(len(actions)),torch.argmax(actions, dim=-1)], targetQs)
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
