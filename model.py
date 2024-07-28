@@ -60,7 +60,7 @@ class SnakeDQN: # needs changing... episodes as a param?
         policyQSum += torch.mean(predPolicy).item()
 
         predTarget = self.target(next_states)  
-        with torch.no_grad(): targetQs = torch.tensor(rewards + self.gamma * predTarget.max()*(1-dones))
+        with torch.no_grad(): targetQs = rewards + self.gamma * predTarget.max(dim=-1)[0]*(1-dones)
         #targetQs-targetQs.detach()
         
 
@@ -70,6 +70,9 @@ class SnakeDQN: # needs changing... episodes as a param?
         self.optimizer.step()
 
         return policyQSum, loss.data.item()
+    
+    
+        
 
         
      
