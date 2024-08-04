@@ -181,10 +181,32 @@ class SnakeGameAI:
                 board[int(part.y // BLOCK_SIZE)][int(part.x // BLOCK_SIZE)] = 0.8
             board[int(self.head.y // BLOCK_SIZE)][int(self.head.x // BLOCK_SIZE)] = 1.0
             torch.set_printoptions(linewidth=160)
-            print(board)
            # plt.imshow(board)
             return board.flatten()
         
+    def convertToLEDBoard(self):
+        #if(self.is_collision()): 
+        #    return 1
+        #else:
+            board = torch.zeros((int(self.h // BLOCK_SIZE)*2, int(self.w // BLOCK_SIZE)*2))
+        
+            board[int(self.food.y // BLOCK_SIZE)][int(self.food.x // BLOCK_SIZE)] = 0.5
+            board[int(self.food.y // BLOCK_SIZE)+1][int(self.food.x // BLOCK_SIZE)] = 0.5
+            board[int(self.food.y // BLOCK_SIZE)][int(self.food.x // BLOCK_SIZE)+1] = 0.5
+            board[int(self.food.y // BLOCK_SIZE)+1][int(self.food.x // BLOCK_SIZE)+1] = 0.5
+            for part in self.snake[1:]:
+                board[int(part.y // BLOCK_SIZE)][int(part.x // BLOCK_SIZE)] = 0.8
+                board[int(part.y // BLOCK_SIZE)+1][int(part.x // BLOCK_SIZE)] = 0.8
+                board[int(part.y // BLOCK_SIZE)][int(part.x // BLOCK_SIZE)+1] = 0.8
+                board[int(part.y // BLOCK_SIZE)+1][int(part.x // BLOCK_SIZE)+1] = 0.8
+
+            board[int(self.head.y // BLOCK_SIZE)][int(self.head.x // BLOCK_SIZE)] = 1.0
+            board[int(self.head.y // BLOCK_SIZE)+1][int(self.head.x // BLOCK_SIZE)] = 1.0
+            board[int(self.head.y // BLOCK_SIZE)][int(self.head.x // BLOCK_SIZE)+1] = 1.0
+            board[int(self.head.y // BLOCK_SIZE)+1][int(self.head.x // BLOCK_SIZE)+1] = 1.0
+            torch.set_printoptions(linewidth=160)
+           # plt.imshow(board)
+            return board.flatten()
         
     
     
