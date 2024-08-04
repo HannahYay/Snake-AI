@@ -23,7 +23,7 @@ class Agent:
         self.decay = 0.995
         self.gamma = 0.95 # discount rate was 0.95
         self.memory = deque(maxlen=MAX_MEMORY) # popleft()
-        self.model = DQN(11, 256, 3) #middle nodes were 256
+        self.model = DQN(11, 256, 3) #middle nodes were 256, 11 inputs
         self.target = DQN(11, 256, 3)
         self.target.load_state_dict(self.model.state_dict())
         self.trainer = SnakeDQN(self.model, lr=LR, gamma=self.gamma, target=self.target)
@@ -115,6 +115,11 @@ class Agent:
         self.qValues.append(sumQ)
 
         self.lossValues.append(loss)
+
+        with open("Q_history.txt", "a") as file:
+                file.write(str(sumQ) + "\n")
+        with open("loss_history.txt", "a") as file:
+                file.write(str(loss)+ "\n")
         
         #for state, action, reward, next_state, done in mini_sample:
             #AverageQ = self.trainer.train_step(state, action, reward, next_state, done) #SnakeDQN is called for each s,a,r,s', done as many times as sample size
@@ -145,6 +150,8 @@ class Agent:
             self.epsilon = max(self.epsilonMin, self.epsilon * self.decay)
             if(self.n_games > 2000): self.epsilonMin = 0.01
             self.epsilon_history.append(self.epsilon)
+            with open("epsilon_history.txt", "a") as file:
+                file.write(str(self.epsilon)+ "\n")
 
 def testPolicy():
         game = SnakeGameAI()
@@ -176,17 +183,12 @@ def train():
         # get old state
         #state_old = game.convertToState() # has been changed
         state_old = agent.get_state(game)
-        print("First state:", state_old)
         # get move
         final_move = agent.get_action(state_old, agent.n_games)
-        print(final_move)
         # perform move and get new state
         reward, done, score = game.play_step(final_move)
         #state_new = game.convertToState()
-        print(game.direction)
         state_new = agent.get_state(game)
-        print("Second state:", state_new)
-        print(game.direction)
         agent.remember(state_old, final_move, reward, state_new, done)
         
 
@@ -205,6 +207,8 @@ def train():
 
             print('Game', agent.n_games, 'Score', score, 'Record:', record)
 
+            with open("score_history.txt", "a") as file:
+                file.write(str(score)+ "\n")
             plot_scores.append(score)
             total_score += score
             mean_score = total_score / agent.n_games
@@ -213,8 +217,10 @@ def train():
             #slope, intercept = np.polyfit(x, plot_scores, 1)
             #regression_line = slope * x + intercept
            # cleaplot_regression_line.append(regression_line)
-            plot_mean_scores.append(mean_score)
-            plot(plot_scores, plot_mean_scores, agent.epsilon_history, agent.qValues, agent.lossValues)
+            #plot_mean_scores.append(mean_score)
+            #plot(plot_scores, plot_mean_scores, agent.epsilon_history, agent.qValues, agent.lossValues)
+            if(agent.n_games % 100 == 0):
+                print("Q-values: ", agent.qValues[agent.n_games-1], "Epsilon: ", agent.epsilon_history[agent.n_games-1])
             
     
         else:
